@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ArthoBodh - a Bengali Word Sense Disambiguation research prototype." />
+  <title>ArthoBodh | Bengali WSD Research Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="ArthoBodh home">
+        <span class="brand-mark" aria-hidden="true"><span>অ</span><i></i></span>
+        <span class="brand-copy"><strong>ArthoBodh</strong><span>Bengali Word Sense Disambiguation</span></span>
+      </a>
+      <span class="prototype-badge"><span class="status-dot"></span>NLP Research Prototype</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="intro-title">
+        <div class="eyebrow"><span class="eyebrow-line"></span>Context-aware language research</div>
+        <h1 id="intro-title">Bengali word sense disambiguation.</h1>
+        <p>Enter a sentence and target word to test the model.</p>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel input-panel" aria-labelledby="test-title">
+          <div class="panel-heading"><div><span class="section-kicker">Model evaluation</span><h2 id="test-title">Test the Model</h2></div><span class="panel-number">01</span></div>
+          <form id="prediction-form" novalidate>
+            <div class="field-group">
+              <div class="field-label-row"><label for="sentence">Bengali Sentence</label><span id="character-count">0 / 500</span></div>
+              <textarea id="sentence" name="sentence" maxlength="500" rows="5" placeholder="উদাহরণ: সে ব্যাংকে টাকা জমা দিতে গেছে।" spellcheck="false"></textarea>
+            </div>
+            <div class="field-group"><label for="target-word">Target Word</label><input id="target-word" name="target_word" type="text" placeholder="Enter the ambiguous word" autocomplete="off" /><span class="field-hint">The exact word to disambiguate, as it appears in the sentence.</span></div>
+            <div class="example-row"><div><span class="field-label">Need a starting point?</span><span class="field-hint">Try a sentence from the Bengali WSD dataset.</span></div><select id="example-select" aria-label="Choose an example sentence"><option value="">Try an example</option><option value="bank-finance">সে ব্যাংকে টাকা জমা দিতে গেছে।</option><option value="bank-river">নদীর ব্যাংকে বসে জেলেরা নৌকা মেরামত করছিল।</option><option value="chokh-eye">তার চোখে ঘুমের ছাপ স্পষ্ট।</option><option value="chokh-hole">সুঁইয়ের চোখে সুতো ঢোকানো কঠিন।</option></select></div>
+            <div id="form-message" class="form-message" role="alert" aria-live="polite"></div>
+            <button class="primary-button" id="predict-button" type="submit"><span class="button-label">Determine Meaning</span><span class="button-loading"><span class="spinner"></span>Analyzing Context...</span><span class="button-arrow" aria-hidden="true">&#8594;</span></button>
+          </form>
+        </section>
+
+        <section class="panel result-panel" aria-labelledby="result-title" aria-live="polite">
+          <div class="panel-heading result-heading"><div><span class="section-kicker">Inference output</span><h2 id="result-title">Prediction</h2></div><span class="model-chip" id="result-mode">MOCK MODE</span></div>
+          <div class="empty-result" id="empty-result"><span class="empty-icon" aria-hidden="true">∿</span><p>Your prediction will appear here.</p><span>Submit a sentence to inspect its contextual meaning.</span></div>
+          <div class="result-content" id="result-content" hidden>
+            <div class="target-display"><span class="result-label">Target word</span><strong id="result-target" lang="bn"></strong></div>
+            <div class="sentence-display"><span class="result-label">Sentence</span><p id="result-sentence" lang="bn"></p></div>
+            <div class="sense-summary"><div><span class="result-label">Predicted sense</span><strong id="predicted-sense" lang="bn"></strong></div><div class="confidence-stat"><span class="result-label">Confidence</span><strong id="confidence-value">--</strong></div></div>
+            <div class="confidence-track" aria-hidden="true"><span id="confidence-bar"></span></div>
+            <div class="alternatives"><div class="alternatives-heading"><span class="result-label">Possible senses</span><span>Probability</span></div><div id="alternatives-list"></div></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="lower-grid">
+        <details class="panel model-panel"><summary><span><span class="section-kicker">Configuration</span><strong>Model Information</strong></span><span class="summary-icon">+</span></summary><div class="model-details"><div><span>Task</span><strong>Bengali Word Sense Disambiguation</strong></div><div><span>Dataset</span><strong>Bengali WSD Dataset</strong></div><div><span>Polysemous words</span><strong>100</strong></div><div><span>Possible senses per word</span><strong>3–4</strong></div><div><span>Model</span><strong class="dynamic-value">Awaiting backend metadata</strong></div><div><span>Accuracy</span><strong class="dynamic-value">Awaiting backend metadata</strong></div><div><span>Macro F1</span><strong class="dynamic-value">Awaiting backend metadata</strong></div></div></details>
+        <section class="panel pipeline-panel" aria-labelledby="pipeline-title"><div class="pipeline-heading"><span class="section-kicker">Inference path</span><h2 id="pipeline-title">How it works</h2></div><div class="pipeline" aria-label="Bengali sentence, context analysis, target word representation, sense prediction, result"><div class="pipeline-step"><span>01</span><strong>Bengali Sentence</strong></div><i>&#8594;</i><div class="pipeline-step"><span>02</span><strong>Context Analysis</strong></div><i>&#8594;</i><div class="pipeline-step"><span>03</span><strong>Target Word<br />Representation</strong></div><i>&#8594;</i><div class="pipeline-step"><span>04</span><strong>Sense Prediction</strong></div><i>&#8594;</i><div class="pipeline-step final-step"><span>05</span><strong>Result</strong></div></div></section>
+      </section>
+    </main>
+    <footer class="site-footer"><span>ArthoBodh — Bengali Word Sense Disambiguation</span><span>Academic NLP Project <b>·</b> v0.1</span></footer>
+  </div>
+  <script src="api-config.js"></script><script src="app.js"></script>
+</body>
+</html>
