@@ -174,12 +174,24 @@ def run_baseline_svm(splits_file: str, vis_dir: str):
         },
         'confusion_matrix': cm.tolist()
     }
-    with open(r"e:\ArthoBodh\baseline_svm_metrics.json", 'w', encoding='utf-8') as f:
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    metrics_dir = root / "results" / "metrics"
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    metrics_path = metrics_dir / "baseline_svm_metrics.json"
+    with open(metrics_path, 'w', encoding='utf-8') as f:
         json.dump(metrics, f, indent=2)
+    print(f"Metrics saved to {metrics_path}")
 
     return metrics
 
 if __name__ == '__main__':
-    splits_file = r"e:\ArthoBodh\dataset_splits.json"
-    vis_dir = r"e:\ArthoBodh\visualizations"
-    run_baseline_svm(splits_file, vis_dir)
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    candidate_splits = root / "data" / "processed" / "dataset_splits.json"
+    splits_file = str(candidate_splits if candidate_splits.exists() else root / "dataset_splits.json")
+
+    vis_dir = root / "results" / "plots"
+    vis_dir.mkdir(parents=True, exist_ok=True)
+
+    run_baseline_svm(splits_file, str(vis_dir))

@@ -96,9 +96,14 @@ def run_error_analysis(splits_file: str):
     print(f"Total misclassifications (errors): {len(all_errors)} ({len(all_errors)/len(test)*100:.2f}%)")
 
     # Save all errors to JSON
-    err_path = r"e:\ArthoBodh\baseline_errors.json"
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    err_dir = root / "results" / "metrics"
+    err_dir.mkdir(parents=True, exist_ok=True)
+    err_path = err_dir / "baseline_errors.json"
     with open(err_path, 'w', encoding='utf-8') as f:
         json.dump(all_errors, f, ensure_ascii=False, indent=2)
+    print(f"Saved baseline errors to {err_path}")
 
     # Print representative errors
     print("\n=======================================================")
@@ -115,5 +120,8 @@ def run_error_analysis(splits_file: str):
     return all_errors, word_stats
 
 if __name__ == '__main__':
-    splits_file = r"e:\ArthoBodh\dataset_splits.json"
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    candidate_splits = root / "data" / "processed" / "dataset_splits.json"
+    splits_file = str(candidate_splits if candidate_splits.exists() else root / "dataset_splits.json")
     run_error_analysis(splits_file)

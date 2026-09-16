@@ -2,7 +2,10 @@
 import numpy as np
 from gensim.models import KeyedVectors
 
-from common import ROOT, context_window, load_data, run_cv
+try:
+    from .common import ROOT, context_window, load_data, run_cv
+except ImportError:
+    from common import ROOT, context_window, load_data, run_cv
 
 kv = KeyedVectors.load_word2vec_format(ROOT / "models" / "cc.bn.300.vec.gz", limit=300_000)
 df = load_data()

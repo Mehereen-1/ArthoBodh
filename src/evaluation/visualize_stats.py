@@ -11,7 +11,11 @@ import numpy as np
 # Use clean styling
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
 
-splits_file = r"e:\ArthoBodh\dataset_splits.json"
+from pathlib import Path
+root = Path(__file__).resolve().parent.parent.parent
+candidate_splits = root / "data" / "processed" / "dataset_splits.json"
+splits_file = candidate_splits if candidate_splits.exists() else root / "dataset_splits.json"
+
 with open(splits_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
@@ -21,7 +25,7 @@ test = data['test']
 catalog = data['catalog']
 all_records = train + val + test
 
-vis_dir = r"e:\ArthoBodh\visualizations"
+vis_dir = str(root / "results" / "plots")
 os.makedirs(vis_dir, exist_ok=True)
 
 # 1. Distribution of Senses per Target Word (3 vs 4)

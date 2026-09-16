@@ -3,17 +3,27 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from normalizer import normalize
+try:
+    from normalizer import normalize
+except ImportError:
+    def normalize(text):
+        return text.strip() if isinstance(text, str) else text
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 
-sys.stdout.reconfigure(encoding="utf-8")  # Bangla output on Windows consoles
-ROOT = Path(__file__).resolve().parent.parent
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")  # Bangla output on Windows consoles
+
+ROOT = Path(__file__).resolve().parent.parent.parent
 PUNCT = re.compile(r"[।॥,;:!?\"'()\[\]\-–—]")
 
 
-def load_data(path=ROOT / "data" / "data.csv"):
+def load_data(path=None):
+    if path is None:
+        cand = ROOT / "data" / "prototype" / "data.csv"
+        path = cand if cand.exists() else ROOT / "data" / "data.csv"
     df = pd.read_csv(path)
     df["sentence"] = df["sentence"].map(normalize)
     df["word"] = df["word"].map(normalize)
@@ -47,6 +57,7 @@ def run_cv(name, df, featurize, model=None):
         print(f"{word}: acc={rows[-1]['accuracy']:.3f}  macro-F1={rows[-1]['macro_f1']:.3f}")
     res = pd.DataFrame(rows)
     print(f"\n[{name}] AVERAGE: acc={res['accuracy'].mean():.3f}  macro-F1={res['macro_f1'].mean():.3f}")
-    (ROOT / "results").mkdir(exist_ok=True)
-    res.to_csv(ROOT / "results" / f"{name}.csv", index=False)
+    out_dir = ROOT / "results" / "prototype"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    res.to_csv(out_dir / f"{name}.csv", index=False)
     return res

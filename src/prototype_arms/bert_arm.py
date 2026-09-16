@@ -2,7 +2,10 @@ import numpy as np
 import torch
 from transformers import AutoModel, AutoTokenizer
 
-from common import load_data, run_cv
+try:
+    from .common import load_data, run_cv
+except ImportError:
+    from common import load_data, run_cv
 
 tok = AutoTokenizer.from_pretrained("csebuetnlp/banglabert")
 bert = AutoModel.from_pretrained("csebuetnlp/banglabert").eval()

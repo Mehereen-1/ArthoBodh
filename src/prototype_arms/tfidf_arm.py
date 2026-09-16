@@ -2,7 +2,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 
-from common import context_window, load_data, run_cv
+try:
+    from .common import context_window, load_data, run_cv
+except ImportError:
+    from common import context_window, load_data, run_cv
 
 df = load_data()
 

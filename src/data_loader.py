@@ -181,7 +181,12 @@ def create_stratified_splits(records, train_ratio=0.70, val_ratio=0.10, test_rat
 
 
 if __name__ == '__main__':
-    data_dir = r"e:\ArthoBodh\Database - Bengali Word Sense Disambiguation"
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    candidate_raw = root / "data" / "raw" / "Bengali_WSD_Database"
+    legacy_raw = root / "Database - Bengali Word Sense Disambiguation"
+    data_dir = str(candidate_raw if candidate_raw.exists() else legacy_raw)
+
     print("Loading Bengali WSD Dataset...")
     records, catalog = load_bengali_wsd_dataset(data_dir)
     print(f"Loaded {len(records)} total records across {len(catalog)} words.")
@@ -197,7 +202,9 @@ if __name__ == '__main__':
     print(f"Val size:   {len(val)} ({len(val)/len(records)*100:.1f}%)")
     print(f"Test size:  {len(test)} ({len(test)/len(records)*100:.1f}%)")
 
-    splits_file = r"e:\ArthoBodh\dataset_splits.json"
+    splits_dir = root / "data" / "processed"
+    splits_dir.mkdir(parents=True, exist_ok=True)
+    splits_file = splits_dir / "dataset_splits.json"
     with open(splits_file, 'w', encoding='utf-8') as f:
         json.dump({'train': train, 'val': val, 'test': test, 'catalog': catalog}, f, ensure_ascii=False, indent=2)
     print(f"Saved synchronized dataset splits to {splits_file}")

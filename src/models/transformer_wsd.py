@@ -174,7 +174,9 @@ def train_model(train_loader, val_loader, model, device, epochs=EPOCHS, lr=LR):
     print("-------------------------------------------------------")
 
     best_val_acc = 0.0
-    best_weights_path = r"e:\ArthoBodh\best_banglabert_wsd.pt"
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    best_weights_path = str(root / "best_banglabert_wsd.pt")
     history = []
 
     for epoch in range(1, epochs + 1):
@@ -384,17 +386,24 @@ def evaluate_test(test_loader, model, device, vis_dir):
     }
 
     # Save outputs
-    with open(r"e:\ArthoBodh\transformer_metrics.json", 'w', encoding='utf-8') as f:
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    metrics_dir = root / "results" / "metrics"
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    with open(metrics_dir / "transformer_metrics.json", 'w', encoding='utf-8') as f:
         json.dump(metrics, f, indent=2)
-    with open(r"e:\ArthoBodh\transformer_test_predictions.json", 'w', encoding='utf-8') as f:
+    with open(metrics_dir / "transformer_test_predictions.json", 'w', encoding='utf-8') as f:
         json.dump(test_records_output, f, ensure_ascii=False, indent=2)
 
     return metrics, test_records_output
 
 
 def run_pipeline():
-    splits_file = r"e:\ArthoBodh\dataset_splits.json"
-    vis_dir = r"e:\ArthoBodh\visualizations"
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent.parent
+    candidate_splits = root / "data" / "processed" / "dataset_splits.json"
+    splits_file = str(candidate_splits if candidate_splits.exists() else root / "dataset_splits.json")
+    vis_dir = str(root / "results" / "plots")
     os.makedirs(vis_dir, exist_ok=True)
 
     with open(splits_file, 'r', encoding='utf-8') as f:

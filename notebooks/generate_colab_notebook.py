@@ -689,7 +689,9 @@ nb = {
     "nbformat_minor": 4
 }
 
-out_path = r"e:\ArthoBodh\ArthoBodh_WSD_Colab.ipynb"
+from pathlib import Path
+out_dir = Path(__file__).resolve().parent
+out_path = out_dir / "ArthoBodh_WSD_Colab.ipynb"
 with open(out_path, 'w', encoding='utf-8') as f:
     json.dump(nb, f, ensure_ascii=False, indent=2)
 
