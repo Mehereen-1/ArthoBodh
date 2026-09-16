@@ -1,9 +1,9 @@
 const config = window.ARTHOBODH_CONFIG || {};
 const examples = {
-  "bank-finance": { sentence: "সে ব্যাংকে টাকা জমা দিতে গেছে।", target: "ব্যাংক" },
-  "bank-river": { sentence: "নদীর ব্যাংকে বসে জেলেরা নৌকা মেরামত করছিল।", target: "ব্যাংক" },
-  "chokh-eye": { sentence: "তার চোখে ঘুমের ছাপ স্পষ্ট।", target: "চোখ" },
-  "chokh-hole": { sentence: "সুঁইয়ের চোখে সুতো ঢোকানো কঠিন।", target: "চোখ" }
+  "phol-fruit": { sentence: "সে বাজার থেকে তাজা ফল কিনেছে।", target: "ফল" },
+  "phol-result": { sentence: "অনেক পরিশ্রমের ফল অবশেষে পেলাম।", target: "ফল" },
+  "har-necklace": { sentence: "দিদি গলায় সোনার হার পরেছে।", target: "হার" },
+  "har-rate": { sentence: "গ্রামে শিক্ষার হার বেড়েছে।", target: "হার" }
 };
 const form = document.querySelector("#prediction-form");
 const sentenceInput = document.querySelector("#sentence");
@@ -39,7 +39,7 @@ async function requestPrediction(sentence, targetWord) {
   const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs || 12000);
   try {
     const response = await fetch(config.apiEndpoint || "/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sentence, target_word: targetWord }), signal: controller.signal });
-    if (!response.ok) throw new Error(`Backend request failed (${response.status}).`);
+    if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.detail || `Backend request failed (${response.status}).`); }
     return await response.json();
   } catch (error) { if (error.name === "AbortError") throw new Error("The request timed out. Please check the backend and try again."); if (error instanceof TypeError) throw new Error("The backend could not be reached. Check the API endpoint and server."); throw error; } finally { clearTimeout(timeout); }
 }
