@@ -1,9 +1,10 @@
+venv/
 .venv/
 __pycache__/
 *.pyc
-*.pyo
-.pytest_cache/
-venv/
-models/
-*.vec
-*.gz
+
+# Fine-tuned model (~420 MB) - share via Drive/Releases, not git
+checkpoints/
+*.pt
+*.safetensors
+*.zip

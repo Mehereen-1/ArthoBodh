@@ -15,7 +15,6 @@ import re
 import json
 import random
 from collections import Counter
-import pandas as pd
 import numpy as np
 
 
@@ -181,11 +180,8 @@ def create_stratified_splits(records, train_ratio=0.70, val_ratio=0.10, test_rat
 
 
 if __name__ == '__main__':
-    from pathlib import Path
-    root = Path(__file__).resolve().parent.parent
-    candidate_raw = root / "data" / "raw" / "Bengali_WSD_Database"
-    legacy_raw = root / "Database - Bengali Word Sense Disambiguation"
-    data_dir = str(candidate_raw if candidate_raw.exists() else legacy_raw)
+    from src import config
+    data_dir = str(config.RAW_DATA_DIR)
 
     print("Loading Bengali WSD Dataset...")
     records, catalog = load_bengali_wsd_dataset(data_dir)
@@ -202,9 +198,8 @@ if __name__ == '__main__':
     print(f"Val size:   {len(val)} ({len(val)/len(records)*100:.1f}%)")
     print(f"Test size:  {len(test)} ({len(test)/len(records)*100:.1f}%)")
 
-    splits_dir = root / "data" / "processed"
-    splits_dir.mkdir(parents=True, exist_ok=True)
-    splits_file = splits_dir / "dataset_splits.json"
+    splits_file = config.SPLITS_PATH
+    splits_file.parent.mkdir(parents=True, exist_ok=True)
     with open(splits_file, 'w', encoding='utf-8') as f:
         json.dump({'train': train, 'val': val, 'test': test, 'catalog': catalog}, f, ensure_ascii=False, indent=2)
     print(f"Saved synchronized dataset splits to {splits_file}")

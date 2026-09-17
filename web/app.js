@@ -1,10 +1,6 @@
 const config = window.ARTHOBODH_CONFIG || {};
-const examples = {
-  "phol-fruit": { sentence: "সে বাজার থেকে তাজা ফল কিনেছে।", target: "ফল" },
-  "phol-result": { sentence: "অনেক পরিশ্রমের ফল অবশেষে পেলাম।", target: "ফল" },
-  "har-necklace": { sentence: "দিদি গলায় সোনার হার পরেছে।", target: "হার" },
-  "har-rate": { sentence: "গ্রামে শিক্ষার হার বেড়েছে।", target: "হার" }
-};
+const api = (path) => `${config.apiBase || ""}${path}`;
+
 const form = document.querySelector("#prediction-form");
 const sentenceInput = document.querySelector("#sentence");
 const targetInput = document.querySelector("#target-word");
@@ -14,10 +10,17 @@ const formMessage = document.querySelector("#form-message");
 const predictButton = document.querySelector("#predict-button");
 const emptyResult = document.querySelector("#empty-result");
 const resultContent = document.querySelector("#result-content");
+let examples = [];
 
 sentenceInput.addEventListener("input", () => { characterCount.textContent = `${sentenceInput.value.length} / 500`; clearMessage(); });
 targetInput.addEventListener("input", clearMessage);
-exampleSelect.addEventListener("change", () => { const example = examples[exampleSelect.value]; if (!example) return; sentenceInput.value = example.sentence; targetInput.value = example.target; sentenceInput.dispatchEvent(new Event("input")); clearMessage(); });
+exampleSelect.addEventListener("change", () => {
+  const example = examples[Number(exampleSelect.value)];
+  if (!example) return;
+  sentenceInput.value = example.sentence.slice(0, 500);
+  targetInput.value = example.target_word;
+  sentenceInput.dispatchEvent(new Event("input"));
+});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -27,40 +30,52 @@ form.addEventListener("submit", async (event) => {
   if (validationError) { showMessage(validationError, "error"); return; }
   setLoading(true); clearMessage();
   try {
-    const result = config.useMock ? await mockPrediction(sentence, targetWord) : await requestPrediction(sentence, targetWord);
-    renderResult({ ...result, target_word: result.target_word || targetWord }, sentence, config.useMock);
+    const result = await requestPrediction(sentence, targetWord);
+    renderResult(result, sentence);
   } catch (error) { showMessage(error.message || "The prediction could not be completed. Please try again.", "error"); } finally { setLoading(false); }
 });
+
+loadMetadata();
+loadExamples();
 
 function validateInput(sentence, targetWord) { if (!sentence) return "Please enter a Bengali sentence to analyze."; if (!targetWord) return "Please enter the ambiguous target word."; if (!sentence.includes(targetWord)) return `The target word “${targetWord}” was not found in the sentence.`; return ""; }
 
 async function requestPrediction(sentence, targetWord) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs || 12000);
+  const timeout = setTimeout(() => controller.abort(), config.requestTimeoutMs || 30000);
   try {
-    const response = await fetch(config.apiEndpoint || "/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sentence, target_word: targetWord }), signal: controller.signal });
+    const response = await fetch(api("/predict"), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sentence, target_word: targetWord }), signal: controller.signal });
     if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.detail || `Backend request failed (${response.status}).`); }
     return await response.json();
-  } catch (error) { if (error.name === "AbortError") throw new Error("The request timed out. Please check the backend and try again."); if (error instanceof TypeError) throw new Error("The backend could not be reached. Check the API endpoint and server."); throw error; } finally { clearTimeout(timeout); }
+  } catch (error) { if (error.name === "AbortError") throw new Error("The request timed out. Please check the backend and try again."); if (error instanceof TypeError) throw new Error("The backend could not be reached. Is the server running?"); throw error; } finally { clearTimeout(timeout); }
 }
 
-async function mockPrediction(sentence, targetWord) {
-  await new Promise((resolve) => setTimeout(resolve, 850));
-  const isRiver = sentence.includes("নদী") || sentence.includes("তীর");
-  const isHole = sentence.includes("সুঁই") || sentence.includes("সুতো");
-  const senses = targetWord === "ব্যাংক" && isRiver ? [{ sense: "নদীর তীর", probability: 0.947 }, { sense: "আর্থিক প্রতিষ্ঠান", probability: 0.038 }, { sense: "অন্যান্য", probability: 0.015 }] : targetWord === "চোখ" && isHole ? [{ sense: "ছিদ্র বা ফাঁক", probability: 0.912 }, { sense: "দৃষ্টির অঙ্গ", probability: 0.067 }, { sense: "অন্যান্য", probability: 0.021 }] : targetWord === "চোখ" ? [{ sense: "দৃষ্টির অঙ্গ", probability: 0.947 }, { sense: "ছিদ্র বা ফাঁক", probability: 0.038 }, { sense: "অন্যান্য", probability: 0.015 }] : [{ sense: "আর্থিক প্রতিষ্ঠান", probability: 0.947 }, { sense: "নদীর তীর", probability: 0.038 }, { sense: "অন্যান্য", probability: 0.015 }];
-  return { target_word: targetWord, predicted_sense: senses[0].sense, confidence: senses[0].probability, alternative_senses: senses };
+async function loadMetadata() {
+  try {
+    const meta = await (await fetch(api("/metadata"))).json();
+    document.querySelector("#supported-words").innerHTML = meta.supported_words.map((w) => `<option value="${escapeHtml(w)}"></option>`).join("");
+    document.querySelector("#meta-model").textContent = meta.model_ready ? meta.model : "Not trained yet";
+    document.querySelector("#meta-accuracy").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.accuracy) : "Run src.evaluate";
+    document.querySelector("#meta-f1").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.macro_f1) : "Run src.evaluate";
+    if (!meta.model_ready) showMessage(meta.model_error, "error");
+  } catch { document.querySelector("#meta-model").textContent = "Backend unreachable"; }
 }
 
-function renderResult(result, sentence, isMock) {
+async function loadExamples() {
+  try {
+    examples = await (await fetch(api("/examples"))).json();
+    exampleSelect.innerHTML = `<option value="">Try an example</option>` + examples.map((e, i) => `<option value="${i}">${escapeHtml(e.target_word)} — ${escapeHtml(e.sentence.slice(0, 50))}…</option>`).join("");
+  } catch { /* examples are optional */ }
+}
+
+function renderResult(result, sentence) {
   const confidence = Math.max(0, Math.min(1, Number(result.confidence) || 0));
-  document.querySelector("#result-mode").textContent = isMock ? "MOCK MODE" : "API RESPONSE";
   document.querySelector("#result-target").textContent = result.target_word;
   document.querySelector("#predicted-sense").textContent = result.predicted_sense;
   document.querySelector("#confidence-value").textContent = formatProbability(confidence);
   document.querySelector("#confidence-bar").style.width = `${confidence * 100}%`;
   document.querySelector("#result-sentence").innerHTML = highlightTarget(sentence, result.target_word);
-  document.querySelector("#alternatives-list").innerHTML = (result.alternative_senses || []).sort((a, b) => b.probability - a.probability).map((alternative, index) => `<div class="alternative-row ${index === 0 ? "is-predicted" : ""}"><strong lang="bn">${escapeHtml(alternative.sense)}</strong><span class="alternative-meter"><i style="width: ${alternative.probability * 100}%"></i></span><b>${formatProbability(alternative.probability)}</b></div>`).join("");
+  document.querySelector("#alternatives-list").innerHTML = (result.alternative_senses || []).map((alternative, index) => `<div class="alternative-row ${index === 0 ? "is-predicted" : ""}"><strong lang="bn">${escapeHtml(alternative.sense)}</strong><span class="alternative-meter"><i style="width: ${alternative.probability * 100}%"></i></span><b>${formatProbability(alternative.probability)}</b></div>`).join("");
   emptyResult.hidden = true; resultContent.hidden = false;
 }
 function highlightTarget(sentence, targetWord) { const safeSentence = escapeHtml(sentence); const safeTarget = escapeHtml(targetWord); return safeSentence.replaceAll(safeTarget, `<mark>${safeTarget}</mark>`); }

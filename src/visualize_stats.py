@@ -1,6 +1,8 @@
 """
 ArthoBodh: Bengali Word Sense Disambiguation (WSD) System
-Module: Visualizations for Dataset Statistics (Phase 1)
+Module: Visualizations for Dataset Statistics
+
+    python -m src.visualize_stats
 """
 
 import os
@@ -11,10 +13,8 @@ import numpy as np
 # Use clean styling
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
 
-from pathlib import Path
-root = Path(__file__).resolve().parent.parent.parent
-candidate_splits = root / "data" / "processed" / "dataset_splits.json"
-splits_file = candidate_splits if candidate_splits.exists() else root / "dataset_splits.json"
+from src import config
+splits_file = config.SPLITS_PATH
 
 with open(splits_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
@@ -25,7 +25,7 @@ test = data['test']
 catalog = data['catalog']
 all_records = train + val + test
 
-vis_dir = str(root / "results" / "plots")
+vis_dir = str(config.PLOTS_DIR)
 os.makedirs(vis_dir, exist_ok=True)
 
 # 1. Distribution of Senses per Target Word (3 vs 4)

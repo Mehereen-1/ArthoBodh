@@ -1,6 +1,8 @@
 """
 ArthoBodh: Bengali Word Sense Disambiguation (WSD) System
-Module: TF-IDF + Linear SVM Baseline (Phase 4)
+Module: TF-IDF + Linear SVM Baseline (comparison for the transformer)
+
+    python -m src.baseline_svm
 
 Implements:
 - Word-specific TF-IDF Vectorizer (1-2 word n-grams)
@@ -174,9 +176,8 @@ def run_baseline_svm(splits_file: str, vis_dir: str):
         },
         'confusion_matrix': cm.tolist()
     }
-    from pathlib import Path
-    root = Path(__file__).resolve().parent.parent.parent
-    metrics_dir = root / "results" / "metrics"
+    from src import config
+    metrics_dir = config.METRICS_DIR
     metrics_dir.mkdir(parents=True, exist_ok=True)
     metrics_path = metrics_dir / "baseline_svm_metrics.json"
     with open(metrics_path, 'w', encoding='utf-8') as f:
@@ -186,12 +187,6 @@ def run_baseline_svm(splits_file: str, vis_dir: str):
     return metrics
 
 if __name__ == '__main__':
-    from pathlib import Path
-    root = Path(__file__).resolve().parent.parent.parent
-    candidate_splits = root / "data" / "processed" / "dataset_splits.json"
-    splits_file = str(candidate_splits if candidate_splits.exists() else root / "dataset_splits.json")
-
-    vis_dir = root / "results" / "plots"
-    vis_dir.mkdir(parents=True, exist_ok=True)
-
-    run_baseline_svm(splits_file, str(vis_dir))
+    from src import config
+    config.PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    run_baseline_svm(str(config.SPLITS_PATH), str(config.PLOTS_DIR))
