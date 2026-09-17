@@ -1,3 +1,0 @@
-"""
-ArthoBodh Evaluation Package
-"""
