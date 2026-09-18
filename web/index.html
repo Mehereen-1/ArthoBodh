@@ -35,7 +35,7 @@
               <div class="field-label-row"><label for="sentence">Bengali Sentence</label><span id="character-count">0 / 500</span></div>
               <textarea id="sentence" name="sentence" maxlength="500" rows="5" placeholder="উদাহরণ: বৃষ্টির জল জমে রাস্তা ডুবে গেছে।" spellcheck="false"></textarea>
             </div>
-            <div class="field-group"><label for="target-word">Target Word</label><input id="target-word" name="target_word" type="text" list="supported-words" placeholder="Enter the ambiguous word" autocomplete="off" /><datalist id="supported-words"></datalist><span class="field-hint">One of the 100 ambiguous words in the dataset, as it appears in the sentence.</span></div>
+            <div class="field-group"><label for="target-word">Target Word</label><input id="target-word" name="target_word" type="text" list="supported-words" placeholder="Enter the target word" autocomplete="off" /><datalist id="supported-words"></datalist><span class="field-hint">Any Bengali word (resolved via trained catalog or IndoWordNet).</span></div>
             <div class="example-row"><div><span class="field-label">Need a starting point?</span><span class="field-hint">Try a held-out test sentence the model never saw during training.</span></div><select id="example-select" aria-label="Choose an example sentence"><option value="">Try an example</option></select></div>
             <div id="form-message" class="form-message" role="alert" aria-live="polite"></div>
             <button class="primary-button" id="predict-button" type="submit"><span class="button-label">Determine Meaning</span><span class="button-loading"><span class="spinner"></span>Analyzing Context...</span><span class="button-arrow" aria-hidden="true">&#8594;</span></button>
@@ -47,6 +47,22 @@
           <div class="empty-result" id="empty-result"><span class="empty-icon" aria-hidden="true">∿</span><p>Your prediction will appear here.</p><span>Submit a sentence to inspect its contextual meaning.</span></div>
           <div class="result-content" id="result-content" hidden>
             <div class="target-display"><span class="result-label">Target word</span><strong id="result-target" lang="bn"></strong></div>
+            <div class="trace-box" id="trace-box" style="margin: 12px 0 16px 0; padding: 10px 14px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #2563eb; font-weight: 700;">Execution Transparency Trace</span>
+                <span id="trace-duration" style="font-size: 0.72rem; color: #64748b;"></span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.82rem;">
+                <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <span style="color: #64748b; display: block; font-size: 0.72rem;">1. Dictionary Used</span>
+                  <span id="trace-dict" style="font-weight: 600; color: #0f172a;">--</span>
+                </div>
+                <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                  <span style="color: #64748b; display: block; font-size: 0.72rem;">2. Neural Model</span>
+                  <span id="trace-model" style="font-weight: 600; color: #0f172a;">--</span>
+                </div>
+              </div>
+            </div>
             <div class="sentence-display"><span class="result-label">Sentence</span><p id="result-sentence" lang="bn"></p></div>
             <div class="sense-summary"><div><span class="result-label">Predicted sense</span><strong id="predicted-sense" lang="bn"></strong></div><div class="confidence-stat"><span class="result-label">Confidence</span><strong id="confidence-value">--</strong></div></div>
             <div class="confidence-track" aria-hidden="true"><span id="confidence-bar"></span></div>
@@ -56,7 +72,7 @@
       </div>
 
       <section class="lower-grid">
-        <details class="panel model-panel"><summary><span><span class="section-kicker">Configuration</span><strong>Model Information</strong></span><span class="summary-icon">+</span></summary><div class="model-details"><div><span>Task</span><strong>Bengali Word Sense Disambiguation</strong></div><div><span>Dataset</span><strong>Bengali WSD Dataset</strong></div><div><span>Polysemous words</span><strong>100</strong></div><div><span>Possible senses per word</span><strong>3–4</strong></div><div><span>Model</span><strong class="dynamic-value" id="meta-model">Loading…</strong></div><div><span>Test accuracy</span><strong class="dynamic-value" id="meta-accuracy">Loading…</strong></div><div><span>Test macro F1</span><strong class="dynamic-value" id="meta-f1">Loading…</strong></div></div></details>
+        <details class="panel model-panel"><summary><span><span class="section-kicker">Configuration</span><strong>Model Information</strong></span><span class="summary-icon">+</span></summary><div class="model-details"><div><span>Task</span><strong>Bengali Word Sense Disambiguation</strong></div><div><span>Dataset</span><strong>Bengali WSD Dataset</strong></div><div><span>Catalog words</span><strong>100 trained words</strong></div><div><span>External Dictionary</span><strong class="dynamic-value" id="meta-dict">IndoWordNet (Active)</strong></div><div><span>Model</span><strong class="dynamic-value" id="meta-model">Loading…</strong></div><div><span>Test accuracy</span><strong class="dynamic-value" id="meta-accuracy">Loading…</strong></div><div><span>Test macro F1</span><strong class="dynamic-value" id="meta-f1">Loading…</strong></div></div></details>
         <section class="panel pipeline-panel" aria-labelledby="pipeline-title"><div class="pipeline-heading"><span class="section-kicker">Inference path</span><h2 id="pipeline-title">How it works</h2></div><div class="pipeline" aria-label="Bengali sentence, mark target word, pair with each definition, BanglaBERT match scores, softmax to best sense"><div class="pipeline-step"><span>01</span><strong>Bengali Sentence</strong></div><i>&#8594;</i><div class="pipeline-step"><span>02</span><strong>Mark Target Word</strong></div><i>&#8594;</i><div class="pipeline-step"><span>03</span><strong>Pair With Each<br />Definition</strong></div><i>&#8594;</i><div class="pipeline-step"><span>04</span><strong>BanglaBERT<br />Match Scores</strong></div><i>&#8594;</i><div class="pipeline-step final-step"><span>05</span><strong>Softmax →<br />Best Sense</strong></div></div></section>
       </section>
     </main>

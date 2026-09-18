@@ -11,3 +11,6 @@ matplotlib
 
 # Web server
 Flask>=2.3
+
+# External Dictionary / Lexical Resource
+pyiwn>=0.0.5

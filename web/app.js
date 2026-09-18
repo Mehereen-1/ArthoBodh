@@ -55,6 +55,7 @@ async function loadMetadata() {
     const meta = await (await fetch(api("/metadata"))).json();
     document.querySelector("#supported-words").innerHTML = meta.supported_words.map((w) => `<option value="${escapeHtml(w)}"></option>`).join("");
     document.querySelector("#meta-model").textContent = meta.model_ready ? meta.model : "Not trained yet";
+    document.querySelector("#meta-dict").textContent = meta.external_dictionary ? `${meta.external_dictionary} ${meta.indowordnet_active ? "(Active)" : ""}` : "Catalog Only";
     document.querySelector("#meta-accuracy").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.accuracy) : "Run src.evaluate";
     document.querySelector("#meta-f1").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.macro_f1) : "Run src.evaluate";
     if (!meta.model_ready) showMessage(meta.model_error, "error");
@@ -75,6 +76,43 @@ function renderResult(result, sentence) {
   document.querySelector("#confidence-value").textContent = formatProbability(confidence);
   document.querySelector("#confidence-bar").style.width = `${confidence * 100}%`;
   document.querySelector("#result-sentence").innerHTML = highlightTarget(sentence, result.target_word);
+
+  // Set model / source badge
+  const modeChip = document.querySelector("#result-mode");
+  if (result.is_monosemous) {
+    modeChip.textContent = "Unambiguous (Single Sense)";
+  } else if (result.source === "supplementary") {
+    modeChip.textContent = "Everyday Lexicon (Concise)";
+  } else if (result.source === "indowordnet") {
+    modeChip.textContent = "IndoWordNet (Zero-Shot)";
+  } else {
+    modeChip.textContent = "BanglaBERT (Trained)";
+  }
+
+  // Populate Execution Transparency Trace
+  const trace = result.execution_trace || {};
+  const traceDict = document.querySelector("#trace-dict");
+  const traceModel = document.querySelector("#trace-model");
+  const traceDur = document.querySelector("#trace-duration");
+
+  if (trace.external_library_used) {
+    traceDict.innerHTML = `<span style="color: #2563eb;">⚡ ${escapeHtml(trace.dictionary_used)} (${trace.candidate_senses_count || 0} senses)</span>`;
+  } else {
+    traceDict.innerHTML = `<span style="color: #059669;">✔ ${escapeHtml(trace.dictionary_used || "Curated Catalog")} (${trace.candidate_senses_count || 0} senses)</span>`;
+  }
+
+  if (trace.neural_model_used) {
+    traceModel.innerHTML = `<span style="color: #7c3aed;">⚡ BanglaBERT Cross-Encoder (Executed)</span>`;
+  } else {
+    traceModel.innerHTML = `<span style="color: #d97706;">⏩ Bypassed (Unambiguous, 1 Sense)</span>`;
+  }
+
+  if (trace.duration_ms) {
+    traceDur.textContent = `Latency: ${trace.duration_ms}ms`;
+  } else {
+    traceDur.textContent = "";
+  }
+
   document.querySelector("#alternatives-list").innerHTML = (result.alternative_senses || []).map((alternative, index) => `<div class="alternative-row ${index === 0 ? "is-predicted" : ""}"><strong lang="bn">${escapeHtml(alternative.sense)}</strong><span class="alternative-meter"><i style="width: ${alternative.probability * 100}%"></i></span><b>${formatProbability(alternative.probability)}</b></div>`).join("");
   emptyResult.hidden = true; resultContent.hidden = false;
 }
