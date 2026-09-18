@@ -4,7 +4,8 @@ ArthoBodh web server.
     GET  /            web interface (web/)
     GET  /metadata    model status, test metrics, supported words
     GET  /examples    a few held-out test sentences to try
-    POST /predict     {"sentence", "target_word"} -> ranked senses from the fine-tuned model
+    GET  /dictionary  ?word=...[&pos=noun|verb|adjective|adverb] -> candidate senses
+    POST /predict     {"sentence", "target_word", optional "pos"} -> ranked senses from the fine-tuned model
 
 The server only serves predictions from the fine-tuned checkpoint in
 checkpoints/banglabert-wsd. If it is missing, /predict answers 503 with instructions
@@ -20,6 +21,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 from src import config
 from src.dictionary import BengaliDictionary
+from src.wordnet_senses import POS_TAGS
 from src.text import normalize_text
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -79,16 +81,19 @@ def metadata():
         "test_metrics": _test_metrics(),
         "supported_words": sorted(SENSES),
         "external_dictionary": "IndoWordNet (Bengali)",
-        "indowordnet_active": dict_service._get_iwn() is not None,
+        "indowordnet_active": dict_service.wordnet_available(),
     })
 
 
 @app.route("/dictionary", methods=["GET"])
 def get_dictionary_senses():
     word = request.args.get("word", "").strip()
+    pos = request.args.get("pos") or None
     if not word:
         return jsonify({"detail": "Please provide a 'word' query parameter."}), 400
-    res = dict_service.get_senses(word)
+    if pos is not None and pos not in POS_TAGS:
+        return jsonify({"detail": f"pos must be one of: {', '.join(POS_TAGS)}."}), 400
+    res = dict_service.get_senses(word, pos=pos)
     return jsonify({
         "word": word,
         "senses": res["senses"],
@@ -103,16 +108,19 @@ def predict():
     data = request.get_json(silent=True) or {}
     sentence = str(data.get("sentence", "")).strip()
     target = normalize_text(data.get("target_word", ""))
+    pos = data.get("pos") or None
 
     if not sentence or not target:
         return jsonify({"detail": "Please provide both sentence and target_word."}), 400
+    if pos is not None and pos not in POS_TAGS:
+        return jsonify({"detail": f"pos must be one of: {', '.join(POS_TAGS)}."}), 400
 
     print(f"\n{'='*65}")
     print(f"[REQUEST] Target Word: '{target}'")
     print(f"          Sentence:    '{sentence[:60]}...'")
 
     # Resolve candidate senses: Catalog -> IndoWordNet
-    sense_info = dict_service.get_senses(target)
+    sense_info = dict_service.get_senses(target, pos=pos)
     senses = sense_info["senses"]
     source = sense_info["source"]
     is_monosemous = sense_info["is_monosemous"]
