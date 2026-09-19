@@ -25,8 +25,10 @@ _SPACES = re.compile(r"\s+")
 _BENGALI_CHAR = r"ঀ-৿"
 
 
+import unicodedata
+
 def normalize_text(text: str) -> str:
-    text = str(text)
+    text = unicodedata.normalize("NFC", str(text))
     if _bn_normalize is not None:
         text = _bn_normalize(text)
     text = _ZERO_WIDTH.sub("", text)
@@ -38,6 +40,8 @@ def mark_target(context: str, target: str) -> tuple[str, bool]:
     Wraps every occurrence of the target that starts a word (so জল matches জল and জলের,
     but not the middle of another word) in quotes. Returns (marked_text, found).
     """
+    context = normalize_text(context)
+    target = normalize_text(target)
     pattern = re.compile(rf"(?<![{_BENGALI_CHAR}])({re.escape(target)}[{_BENGALI_CHAR}]*)")
     marked, count = pattern.subn(r'" \1 "', context)
     return marked, count > 0

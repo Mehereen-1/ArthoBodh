@@ -38,7 +38,14 @@ form.addEventListener("submit", async (event) => {
 loadMetadata();
 loadExamples();
 
-function validateInput(sentence, targetWord) { if (!sentence) return "Please enter a Bengali sentence to analyze."; if (!targetWord) return "Please enter the ambiguous target word."; if (!sentence.includes(targetWord)) return `The target word “${targetWord}” was not found in the sentence.`; return ""; }
+function validateInput(sentence, targetWord) {
+  if (!sentence) return "Please enter a Bengali sentence to analyze.";
+  if (!targetWord) return "Please enter the ambiguous target word.";
+  const nSent = sentence.normalize("NFC");
+  const nTarget = targetWord.normalize("NFC");
+  if (!nSent.includes(nTarget)) return `The target word “${targetWord}” was not found in the sentence.`;
+  return "";
+}
 
 async function requestPrediction(sentence, targetWord) {
   const controller = new AbortController();
@@ -58,6 +65,10 @@ async function loadMetadata() {
     document.querySelector("#meta-dict").textContent = meta.external_dictionary ? `${meta.external_dictionary} ${meta.indowordnet_active ? "(Active)" : ""}` : "Catalog Only";
     document.querySelector("#meta-accuracy").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.accuracy) : "Run src.evaluate";
     document.querySelector("#meta-f1").textContent = meta.test_metrics ? formatProbability(meta.test_metrics.macro_f1) : "Run src.evaluate";
+    const catElem = document.querySelector("#meta-catalog-count");
+    if (catElem && meta.catalog_size) {
+      catElem.textContent = `${meta.catalog_size.toLocaleString()} trained words`;
+    }
     if (!meta.model_ready) showMessage(meta.model_error, "error");
   } catch { document.querySelector("#meta-model").textContent = "Backend unreachable"; }
 }
@@ -86,7 +97,7 @@ function renderResult(result, sentence) {
   } else if (result.source === "indowordnet") {
     modeChip.textContent = "IndoWordNet (Zero-Shot)";
   } else {
-    modeChip.textContent = "BanglaBERT (Trained)";
+    modeChip.textContent = result.model_name || "BanglaBERT (Trained)";
   }
 
   // Populate Execution Transparency Trace
