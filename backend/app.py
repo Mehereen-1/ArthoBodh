@@ -44,8 +44,11 @@ if combined_splits_path.exists():
     for info in _combined_data.get("catalog", {}).values():
         SENSES[normalize_text(info["target_word"])] = info["senses"]
 
-    # Sample balanced examples from test set
-    test_recs = _combined_data.get("test", [])
+    # Sample balanced examples from test set (strictly verified to contain target word)
+    test_recs = [
+        r for r in _combined_data.get("test", [])
+        if normalize_text(r.get("target_word", "")) in normalize_text(r.get("text", ""))
+    ]
     _raw_examples = random.Random(config.SEED).sample(test_recs, min(20, len(test_recs)))
     print(f"Catalog ready: {len(SENSES):,} trained Bengali polysemous words.")
 else:
